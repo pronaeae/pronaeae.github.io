@@ -2,7 +2,7 @@
 
 - 작성일: 2026-09-05
 - 저장소: 새로 만드는 `pronaeae/pronaeae.github.io`
-- 상태: 설계 확정
+- 상태: 구현·배포 완료 (https://pronaeae.github.io/)
 - 대체: `2026-09-05-velog-style-blog-design.md` (velog 스타일 안은 폐기)
 
 ## 1. 목적과 범위
@@ -12,7 +12,7 @@
 
 ### 성공 기준
 
-1. 마크다운을 `src/content/posts/` 에 넣고 `main` 에 push 하면 별도 조작 없이 배포된다.
+1. 마크다운을 `content/<카테고리>/<글 폴더>/index.md` 에 넣고 `main` 에 push 하면 별도 조작 없이 배포된다.
 2. 프론트매터가 잘못되면 배포가 아니라 빌드에서 실패한다.
 3. 첫 화면이 Evans Library 와 같은 인상을 준다 — 종이색 바탕, 세리프 제목, 테두리 없는 가로형 글 목록.
 4. 히어로에 깃헙 프로필 사진 · 닉네임 · 이메일이 있다.
@@ -44,7 +44,7 @@
 
 ### 버전 제약
 
-- **Node 22.12.0 이상.** Astro 7 은 그 아래에서 경고가 아니라 즉시 종료한다. `.nvmrc` 에 기록돼 있다.
+- **Node 24.13.0 이상.** Astro 7 자체는 22.12.0 부터 돌지만, 이 개발 머신의 프로젝트 경로에 한글(`새 폴더`)이 들어 있어 Node 22.x 는 모듈 해석 도중 액세스 위반(0xC0000005)으로 죽는다. `astro`·`vitest` 가 뜨지도 못한다. 24.13.0 에서는 정상이다. `.nvmrc` 에 기록돼 있다.
 - **`typescript` 는 6.x 고정.** `@astrojs/check@0.9.10` 이 쓰는 프로그래매틱 API 를 TypeScript 7 이 제공하지 않아 `astro check` 가 진단 전에 죽고, `build` 가 `astro check && …` 이므로 CI 전체가 실패한다.
 - **Astro 7 컴파일러는 닫지 않은 태그를 에러로 본다.** 모든 `.astro` 태그를 닫는다.
 - **`compressHTML` 기본값이 `'jsx'`** 라 인라인 요소 사이 공백이 사라진다. 공백이 필요하면 `{" "}` 를 명시한다. 이 설계의 화면은 공백에 의존하지 않는다.
@@ -110,7 +110,7 @@ Sep 03, 2026                              └──────────┘
 - 썸네일이 없으면 오른쪽 칸을 렌더하지 않고 텍스트가 전체 폭을 쓴다
 - 카드 전체가 링크이고 hover 시 `--hover` 배경
 
-### 글 목록 (`/posts`, `/posts/[page]`)
+### 글 목록 (`/posts`, `/posts/page/[page]`)
 
 히어로 없이 같은 카드를 전체 글에 대해 10개씩. 아래에 이전/다음 페이지.
 
@@ -118,7 +118,9 @@ Sep 03, 2026                              └──────────┘
 
 1. 제목(세리프, `clamp(2rem, 3.2vw, 2.6rem)`, 700)
 2. `프로그래밍 / 네트워크 · Sep 03, 2026`
-3. 본문 720px. 오른쪽에 목차 176px — `IntersectionObserver` 로 현재 위치를 굵게. 900px 미만에서는 숨긴다
+3. 본문 720px. 오른쪽에 목차 176px — `IntersectionObserver` 로 현재 위치를 굵게. 1200px 미만에서는 숨긴다
+
+   본문 칸은 `grid-template-columns: 1fr min(720px,100%) 1fr` 로 잡고 목차를 세 번째 칸에 넣는다. flex + `justify-content:center` 로 하면 목차 폭까지 가운데 계산에 들어가 본문이 제목 블록보다 왼쪽으로 밀린다.
 4. 이전/다음 글
 5. giscus
 
@@ -134,26 +136,42 @@ giscus 도 전환 시 `postMessage` 로 `setConfig` 를 보내 같이 바꾼다.
 
 ## 5. 콘텐츠 모델
 
+글은 저장소 루트의 `content/` 아래에 둔다. `src/content/posts/` 에 묻지 않은 것은
+글 쓸 때 경로가 짧아야 하기 때문이다.
+
+```
+content/
+  네트워크/                          ← 카테고리
+    2026-09-05-tcp-3-way-handshake/  ← 글 폴더 하나가 글 하나
+      index.md
+      thumbnail.png
+  프로그래밍/네트워크/웹/             ← 중첩하면 "프로그래밍 / 네트워크 / 웹"
+    cors/
+      index.md
+```
+
+**카테고리는 프론트매터가 아니라 폴더 경로다.** `content/` 와 글 폴더 사이의
+모든 폴더 이름을 `/` 로 이은 것이 카테고리이고, 단계가 몇 개든 스키마를 고칠 필요가 없다.
+
+프론트매터에는 카테고리가 없다.
+
 ```ts
 const posts = defineCollection({
-  loader: glob({ pattern: '**/index.md', base: './src/content/posts' }),
+  loader: glob({ pattern: '**/index.md', base: './content' }),
   schema: ({ image }) => z.object({
-    title: z.string().max(120),
-    description: z.string().max(300),
+    title: z.string().min(1).max(120),
+    description: z.string().min(1).max(300),
     date: z.coerce.date(),
-    category: z.array(z.string()).min(1).max(3),
     thumbnail: image().optional(),
     draft: z.boolean().default(false),
   }),
 });
 ```
 
-`category` 는 큰 갈래에서 작은 갈래 순서로 쓴다: `[프로그래밍, 네트워크, 웹]` → `프로그래밍 / 네트워크 / 웹`.
-
 ### slug 규칙
 
-디렉터리 `2026-09-03-tcp-3-way-handshake` 에서 날짜 접두사를 뗀 `tcp-3-way-handshake` 를 slug 로 쓴다.
-날짜 접두사는 파일 탐색기 정렬용이고 URL 에는 노출하지 않는다.
+글 폴더 `2026-09-03-tcp-3-way-handshake` 에서 날짜 접두사를 뗀 `tcp-3-way-handshake` 를 slug 로 쓴다.
+날짜 접두사는 파일 탐색기 정렬용이고 URL 에는 노출하지 않으며, 붙일지 말지는 자유다.
 
 ### draft
 
@@ -165,14 +183,16 @@ const posts = defineCollection({
 | --- | --- |
 | `/` | 히어로 + Recent Posts 10개 |
 | `/posts` | 전체 글 1페이지 |
-| `/posts/[page]` | `/posts/2` … |
+| `/posts/page/[page]` | `/posts/page/2` … |
 | `/posts/[slug]` | 글 상세 |
 | `/about` | 소개 |
 | `/rss.xml` | RSS |
 | `/sitemap-index.xml` | `@astrojs/sitemap` |
 | `/404` | 404 |
 
-`/posts/[page]` 와 `/posts/[slug]` 가 같은 자리를 놓고 겹친다. `[page]` 를 `getStaticPaths` 에서 숫자만 생성하고 slug 에 숫자를 쓰지 않는 것으로 충돌을 피한다. 이를 위해 **slug 는 숫자로만 이루어질 수 없다**는 제약을 콘텐츠 로딩 단계에서 검사해 빌드를 실패시킨다.
+페이지네이션을 `/posts/[page]` 로 두면 `/posts/[slug]` 와 같은 자리의 동적 라우트 두 개가 되어 어느 쪽이 이길지 보장되지 않는다. 한 단계 내린 `/posts/page/[page]` 는 세그먼트 수가 달라 충돌 자체가 없다.
+
+남는 위험은 slug 가 `page` 인 글 하나뿐이므로, **slug 는 `page` 일 수 없다**는 제약만 콘텐츠 로딩 단계에서 검사해 빌드를 실패시킨다. 함께 검사하는 것: 카테고리 폴더 없이 놓인 글, 빈 slug, slug 중복.
 
 ## 7. 코드 구조
 
@@ -180,9 +200,11 @@ const posts = defineCollection({
 | --- | --- |
 | `site.config.ts` | 사이트 이름·닉네임·이메일·아바타·giscus 설정 |
 | `astro.config.mjs` | site URL, sitemap, Shiki 이중 테마 |
+| `content/` | 글. 폴더 구조가 곧 카테고리 |
 | `src/content.config.ts` | posts 컬렉션 로더와 zod 스키마 |
+| `src/queries.ts` | `astro:content` 를 읽어 lib 함수에 넘기고, 폴더 규칙을 검증하는 유일한 지점 |
 | `src/lib/types.ts` | lib 함수가 쓰는 `PostLike` 인터페이스 (astro 의존 없음) |
-| `src/lib/posts.ts` | 초안 제외·날짜 정렬·slug 계산·slug 검증·페이지 분할 |
+| `src/lib/posts.ts` | 초안 제외·날짜 정렬·slug/카테고리 계산·규칙 검증·페이지 분할·이전다음 |
 | `src/lib/format.ts` | `Sep 03, 2026` 날짜 포맷, 카테고리 `/` 연결 |
 | `src/styles/tokens.css` | 라이트/다크 CSS 변수, 폰트 스택 |
 | `src/styles/global.css` | 리셋, 본문 타이포, 코드 블록 |
@@ -192,6 +214,8 @@ const posts = defineCollection({
 | `src/components/Hero.astro` | 아바타 · 닉네임 · 이메일 · 구분선 |
 | `src/components/SectionHeader.astro` | 섹션 제목 + `View all →` |
 | `src/components/PostCard.astro` | 가로형 글 카드 |
+| `src/components/PostList.astro` | 카드 목록과 빈 상태 |
+| `src/layouts/PageLayout.astro` | `/about` 같은 마크다운 한 장 페이지 |
 | `src/components/Pagination.astro` | 이전/다음 페이지 |
 | `src/components/TableOfContents.astro` | 스크롤 추적 목차 |
 | `src/components/Giscus.astro` | 댓글 (설정 없으면 렌더 안 함) |
@@ -208,7 +232,8 @@ const posts = defineCollection({
 | 위험 | 방지 |
 | --- | --- |
 | 프론트매터 오타·누락 | zod 스키마 → `astro build` 실패 |
-| 숫자로만 된 slug 가 `/posts/2` 와 충돌 | 로딩 단계에서 검사해 빌드 실패 |
+| slug `page` 가 페이지네이션과 충돌 | `src/queries.ts` 에서 검사해 빌드 실패 |
+| 카테고리 폴더 없이 놓인 글, 빈 slug, slug 중복 | 같은 자리에서 검사해 빌드 실패 |
 | 타입 오류 | `astro check` 를 빌드 전에 실행 |
 | 정렬·페이지 분할 회귀 | `src/lib/*.ts` 를 vitest 로 테스트 |
 | 빌드는 되는데 산출물이 비었음 | `dist/index.html`, `dist/rss.xml`, `dist/sitemap-index.xml` 존재 확인 |
