@@ -1,0 +1,122 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+}
+
+/** h2·h3 만 쓴다. h4 아래까지 넣으면 목차가 본문만큼 길어진다 */
+const items = Astro.props.headings.filter(
+  (heading) => heading.depth === 2 || heading.depth === 3,
+);
+---
+
+{items.length > 0 && (
+  <nav class="toc" aria-label="목차">
+    <ul>
+      {items.map((heading) => (
+        <li class:list={[`depth-${heading.depth}`]}>
+          <a href={`#${heading.slug}`} data-toc-link={heading.slug}>
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+
+<style>
+  .toc {
+    position: sticky;
+    top: calc(4 * var(--space));
+    width: var(--aside);
+    flex-shrink: 0;
+    max-height: calc(100vh - 8 * var(--space));
+    overflow-y: auto;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0 0 0 calc(1.5 * var(--space));
+    border-left: 1px solid var(--border);
+    list-style: none;
+  }
+
+  li {
+    margin: calc(0.75 * var(--space)) 0;
+  }
+
+  .depth-3 {
+    padding-left: calc(1.25 * var(--space));
+  }
+
+  a {
+    color: var(--text-sub);
+    transition: color 0.15s ease-in-out;
+  }
+
+  a:hover {
+    color: var(--text);
+  }
+
+  a.current {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /*
+   * 목차는 본문 720px 바깥의 오른쪽 여백에 들어간다. 그 여백이 목차 폭(176px)
+   * 과 안쪽 여백(32px)을 감당하려면 뷰포트가 1200px 은 되어야 한다.
+   */
+  @media (max-width: 1199px) {
+    .toc {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const links = new Map<string, HTMLAnchorElement>();
+  for (const link of document.querySelectorAll<HTMLAnchorElement>(
+    '[data-toc-link]',
+  )) {
+    links.set(link.dataset.tocLink ?? '', link);
+  }
+
+  if (links.size > 0) {
+    const headings = [...links.keys()]
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => element !== null);
+
+    // 화면에 걸친 제목 중 가장 위의 것을 현재 위치로 본다
+    const visible = new Set<string>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            visible.add(entry.target.id);
+          } else {
+            visible.delete(entry.target.id);
+          }
+        }
+
+        const current = headings.find((heading) => visible.has(heading.id));
+        for (const [id, link] of links) {
+          link.classList.toggle('current', id === current?.id);
+        }
+      },
+      { rootMargin: '0px 0px -70% 0px' },
+    );
+
+    for (const heading of headings) {
+      observer.observe(heading);
+    }
+  }
+</script>

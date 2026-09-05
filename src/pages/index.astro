@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import PostList from '../components/PostList.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import { loadPosts } from '../queries';
+import { site } from '../../site.config';
+
+const posts = await loadPosts();
+const recent = posts.slice(0, site.recentPostCount);
+const hasMore = posts.length > recent.length;
+---
+
+<BaseLayout>
+  <Hero />
+  <section class="recent">
+    <SectionHeader title="Recent Posts" href={hasMore ? '/posts/' : undefined} />
+    <PostList posts={recent} empty="첫 글을 기다리는 중입니다." />
+  </section>
+</BaseLayout>
+
+<style>
+  .recent {
+    margin-bottom: calc(6 * var(--space));
+  }
+</style>

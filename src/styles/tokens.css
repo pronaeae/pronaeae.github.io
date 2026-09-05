@@ -1,0 +1,37 @@
+/*
+ * evan-moon.github.io (Evans Library) 의 MUI 팔레트에서 뽑은 값.
+ * 강조색은 일부러 두지 않는다. 링크는 색이 아니라 밑줄과 굵기로 구분한다.
+ */
+:root {
+  --bg: #faf9f5;
+  --text: #2c2b28;
+  --text-sub: #6b6760;
+  --text-body: #616161;
+  --border: rgba(0, 0, 0, 0.12);
+  --hover: rgba(0, 0, 0, 0.03);
+  --code-bg: rgba(0, 0, 0, 0.04);
+
+  --font-serif: 'Cormorant Garamond', 'Noto Serif KR', 'KoPub Batang', serif;
+  --font-sans: Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Malgun Gothic', sans-serif;
+  --font-mono: Consolas, Menlo, 'D2Coding', monospace;
+
+  --space: 8px;
+  --container: 1200px;
+  --prose: 720px;
+  --aside: 176px;
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: #111111;
+  --text: #e8e6e1;
+  --text-sub: #9e9a93;
+  --text-body: #b5b1aa;
+  --border: rgba(255, 255, 255, 0.15);
+  --hover: rgba(255, 255, 255, 0.04);
+  --code-bg: rgba(255, 255, 255, 0.06);
+
+  color-scheme: dark;
+}

@@ -1,0 +1,71 @@
+---
+import { site } from '../../site.config';
+---
+
+<section class="hero">
+  <img
+    class="avatar"
+    src={site.avatar}
+    alt=""
+    width="96"
+    height="96"
+    loading="eager"
+  />
+  <h1 class="nickname">{site.nickname}</h1>
+  <a class="email" href={`mailto:${site.email}`}>{site.email}</a>
+  <hr class="rule" />
+</section>
+
+<style>
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: calc(6 * var(--space)) var(--space) calc(5 * var(--space));
+  }
+
+  .avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: calc(2.5 * var(--space));
+  }
+
+  .nickname {
+    margin: 0 0 calc(1 * var(--space));
+    font-family: var(--font-serif);
+    font-size: clamp(2.43rem, 4.2vw, 2.95rem);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.14;
+    text-align: center;
+  }
+
+  .email {
+    font-size: 0.92rem;
+    letter-spacing: 0.01em;
+    color: var(--text-sub);
+  }
+
+  .email:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .rule {
+    width: 64px;
+    max-width: 24vw;
+    height: 1px;
+    border: 0;
+    margin: calc(3 * var(--space)) 0 0;
+    background: var(--text-sub);
+    opacity: 0.2;
+  }
+
+  @media (max-width: 600px) {
+    .hero {
+      padding-top: calc(4 * var(--space));
+    }
+  }
+</style>

@@ -1,0 +1,177 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Giscus from '../components/Giscus.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import { formatCategory, formatDate, toIsoDate } from '../lib/format';
+import type { Post } from '../queries';
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  post: Post;
+  headings: Heading[];
+  prev: Post | null;
+  next: Post | null;
+}
+
+const { post, headings, prev, next } = Astro.props;
+const { data } = post.entry;
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  ogType="article"
+  publishedAt={data.date}
+>
+  <article>
+    <header class="post-header">
+      <p class="meta">
+        <span>{formatCategory(post.category)}</span>
+        <span class="dot">·</span>
+        <time datetime={toIsoDate(data.date)}>{formatDate(data.date)}</time>
+      </p>
+      <h1>{data.title}</h1>
+      <p class="description">{data.description}</p>
+    </header>
+
+    <div class="body">
+      <div class="prose">
+        <slot />
+      </div>
+      <div class="aside">
+        <TableOfContents headings={headings} />
+      </div>
+    </div>
+  </article>
+
+  {(prev || next) && (
+    <nav class="neighbors" aria-label="다른 글">
+      {prev ? (
+        <a class="neighbor prev" href={prev.url}>
+          <span class="label">이전 글</span>
+          <span class="neighbor-title">{prev.entry.data.title}</span>
+        </a>
+      ) : (
+        <span></span>
+      )}
+      {next ? (
+        <a class="neighbor next" href={next.url}>
+          <span class="label">다음 글</span>
+          <span class="neighbor-title">{next.entry.data.title}</span>
+        </a>
+      ) : (
+        <span></span>
+      )}
+    </nav>
+  )}
+
+  <Giscus />
+</BaseLayout>
+
+<style>
+  .post-header {
+    max-width: var(--prose);
+    margin: calc(6 * var(--space)) auto calc(5 * var(--space));
+  }
+
+  .post-header h1 {
+    margin: 0 0 calc(1.5 * var(--space));
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 3.2vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.016em;
+    line-height: 1.25;
+  }
+
+  .meta {
+    margin: 0 0 calc(1.5 * var(--space));
+    font-size: 0.9375rem;
+    color: var(--text-sub);
+  }
+
+  .dot {
+    margin: 0 calc(0.5 * var(--space));
+  }
+
+  .description {
+    margin: 0;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--text-body);
+  }
+
+  /*
+   * 본문을 컨테이너 한가운데 720px 로 놓고, 목차는 오른쪽 여백 칸에 넣는다.
+   * flex + justify-content:center 로 하면 목차 폭까지 계산에 들어가 본문이
+   * 제목 블록보다 왼쪽으로 밀린다. 그래서 가운데 칸을 고정한 grid 를 쓴다.
+   */
+  .body {
+    display: grid;
+    grid-template-columns: 1fr min(var(--prose), 100%) 1fr;
+    align-items: start;
+  }
+
+  .body .prose {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .aside {
+    grid-column: 3;
+    padding-left: calc(4 * var(--space));
+  }
+
+  .neighbors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(2 * var(--space));
+    max-width: var(--prose);
+    margin: calc(8 * var(--space)) auto 0;
+    padding-top: calc(3 * var(--space));
+    border-top: 1px solid var(--border);
+  }
+
+  .neighbor {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--space));
+    padding: calc(1.5 * var(--space));
+    border-radius: 5px;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .neighbor:hover {
+    background: var(--hover);
+  }
+
+  .neighbor.next {
+    text-align: right;
+  }
+
+  .label {
+    font-size: 0.8125rem;
+    color: var(--text-sub);
+  }
+
+  .neighbor-title {
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 600px) {
+    .neighbors {
+      grid-template-columns: 1fr;
+    }
+
+    .neighbor.next {
+      text-align: left;
+    }
+  }
+</style>

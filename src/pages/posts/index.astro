@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import Pagination from '../../components/Pagination.astro';
+import { paginate } from '../../lib/posts';
+import { loadPosts } from '../../queries';
+import { site } from '../../../site.config';
+
+const pages = paginate(await loadPosts(), site.postsPerPage);
+---
+
+<BaseLayout title="Posts" description={`${site.nickname} 이 쓴 글 전체`}>
+  <h1 class="page-title">Posts</h1>
+  <PostList posts={pages[0] ?? []} />
+  <Pagination current={1} total={pages.length} />
+</BaseLayout>
+
+<style>
+  .page-title {
+    margin: calc(6 * var(--space)) 0 calc(4 * var(--space));
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 3.2vw, 2.6rem);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+</style>

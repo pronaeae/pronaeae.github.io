@@ -1,0 +1,47 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostList from '../../../components/PostList.astro';
+import Pagination from '../../../components/Pagination.astro';
+import { paginate } from '../../../lib/posts';
+import { loadPosts, type Post } from '../../../queries';
+import { site } from '../../../../site.config';
+
+/**
+ * 1페이지는 `/posts/` 가 맡으므로 여기서는 2페이지부터 만든다.
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+  const pages = paginate(await loadPosts(), site.postsPerPage);
+  return pages.slice(1).map((posts, index) => ({
+    params: { page: String(index + 2) },
+    props: { posts, current: index + 2, total: pages.length },
+  }));
+};
+
+interface Props {
+  posts: Post[];
+  current: number;
+  total: number;
+}
+
+const { posts, current, total } = Astro.props;
+---
+
+<BaseLayout
+  title={`Posts (${current}/${total})`}
+  description={`${site.nickname} 이 쓴 글 전체`}
+>
+  <h1 class="page-title">Posts</h1>
+  <PostList posts={posts} />
+  <Pagination current={current} total={total} />
+</BaseLayout>
+
+<style>
+  .page-title {
+    margin: calc(6 * var(--space)) 0 calc(4 * var(--space));
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 3.2vw, 2.6rem);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+</style>

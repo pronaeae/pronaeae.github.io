@@ -1,0 +1,41 @@
+---
+import PostCard from './PostCard.astro';
+import type { Post } from '../queries';
+
+interface Props {
+  posts: Post[];
+  /** 글이 하나도 없을 때 보여줄 문구 */
+  empty?: string;
+}
+
+const { posts, empty = '아직 쓴 글이 없습니다.' } = Astro.props;
+---
+
+{posts.length === 0 ? (
+  <p class="empty">{empty}</p>
+) : (
+  <ul class="list">
+    {posts.map((post) => (
+      <li><PostCard post={post} /></li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* 카드 사이는 테두리가 아니라 1px 구분선으로만 나눈다 */
+  .list li + li {
+    border-top: 1px solid var(--border);
+  }
+
+  .empty {
+    padding: calc(6 * var(--space)) 0;
+    color: var(--text-sub);
+    text-align: center;
+  }
+</style>

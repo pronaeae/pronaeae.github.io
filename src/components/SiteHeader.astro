@@ -1,0 +1,97 @@
+---
+import { site } from '../../site.config';
+import ThemeToggle from './ThemeToggle.astro';
+
+const nav = [
+  { label: 'Home', href: '/' },
+  { label: 'Posts', href: '/posts/' },
+  { label: 'About', href: '/about/' },
+];
+
+const path = Astro.url.pathname;
+
+function isCurrent(href: string): boolean {
+  if (href === '/') {
+    return path === '/';
+  }
+  return path.startsWith(href);
+}
+---
+
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href="/">{site.title}</a>
+    <nav>
+      <ul>
+        {nav.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class:list={['nav-link', { current: isCurrent(item.href) }]}
+              aria-current={isCurrent(item.href) ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+        <li><ThemeToggle /></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(2 * var(--space));
+    min-height: 64px;
+  }
+
+  .brand {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    white-space: nowrap;
+  }
+
+  ul {
+    display: flex;
+    align-items: center;
+    gap: calc(2.5 * var(--space));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav-link {
+    font-size: 0.9375rem;
+    color: var(--text-sub);
+    transition: color 0.15s ease-in-out;
+  }
+
+  .nav-link:hover {
+    color: var(--text);
+  }
+
+  .nav-link.current {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  @media (max-width: 600px) {
+    .brand {
+      font-size: 1.0625rem;
+    }
+
+    ul {
+      gap: calc(1.75 * var(--space));
+    }
+  }
+</style>

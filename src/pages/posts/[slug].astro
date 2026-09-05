@@ -1,0 +1,32 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+import { loadPosts, type Post } from '../../queries';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = await loadPosts();
+  return posts.map((post, index) => ({
+    params: { slug: post.slug },
+    props: {
+      post,
+      // 목록이 최신순이므로 앞쪽이 더 최신이다
+      next: posts[index - 1] ?? null,
+      prev: posts[index + 1] ?? null,
+    },
+  }));
+};
+
+interface Props {
+  post: Post;
+  prev: Post | null;
+  next: Post | null;
+}
+
+const { post, prev, next } = Astro.props;
+const { Content, headings } = await render(post.entry);
+---
+
+<PostLayout post={post} headings={headings} prev={prev} next={next}>
+  <Content />
+</PostLayout>

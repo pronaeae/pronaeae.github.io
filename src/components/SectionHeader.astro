@@ -1,0 +1,40 @@
+---
+interface Props {
+  title: string;
+  /** 있으면 오른쪽에 "View all →" 링크를 단다 */
+  href?: string;
+}
+
+const { title, href } = Astro.props;
+---
+
+<div class="section-header">
+  <h2>{title}</h2>
+  {href && <a href={href}>View all →</a>}
+</div>
+
+<style>
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: calc(2 * var(--space));
+  }
+
+  h2 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.4286rem;
+    font-weight: 700;
+    line-height: 1.6;
+  }
+
+  a {
+    font-size: 0.9375rem;
+    color: var(--text-sub);
+  }
+
+  a:hover {
+    color: var(--text);
+  }
+</style>

@@ -1,0 +1,60 @@
+---
+interface Props {
+  current: number;
+  total: number;
+}
+
+const { current, total } = Astro.props;
+
+/** 1페이지는 `/posts/`, 그 뒤는 `/posts/page/2/` */
+function pageUrl(page: number): string {
+  return page <= 1 ? '/posts/' : `/posts/page/${page}/`;
+}
+
+const prev = current > 1 ? pageUrl(current - 1) : null;
+const next = current < total ? pageUrl(current + 1) : null;
+---
+
+{total > 1 && (
+  <nav class="pagination" aria-label="페이지 이동">
+    {prev ? (
+      <a href={prev} rel="prev">← 이전</a>
+    ) : (
+      <span class="disabled">← 이전</span>
+    )}
+    <span class="count">{current} / {total}</span>
+    {next ? (
+      <a href={next} rel="next">다음 →</a>
+    ) : (
+      <span class="disabled">다음 →</span>
+    )}
+  </nav>
+)}
+
+<style>
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(2 * var(--space));
+    margin-top: calc(5 * var(--space));
+    padding-top: calc(3 * var(--space));
+    border-top: 1px solid var(--border);
+    font-size: 0.9375rem;
+  }
+
+  a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .disabled {
+    color: var(--text-sub);
+    opacity: 0.4;
+  }
+
+  .count {
+    color: var(--text-sub);
+    letter-spacing: 0.02em;
+  }
+</style>
