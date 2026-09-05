@@ -113,7 +113,6 @@ const { data } = post.entry;
   .body {
     display: grid;
     grid-template-columns: 1fr min(var(--prose), 100%) 1fr;
-    align-items: start;
   }
 
   .body .prose {
@@ -121,8 +120,14 @@ const { data } = post.entry;
     min-width: 0;
   }
 
+  /*
+   * 목차 칸은 본문 높이만큼 늘어나야 한다. `align-items: start` 로 두면 칸이
+   * 목차 내용 높이에서 멈춰서, 안쪽의 position:sticky 가 움직일 구간을
+   * 갖지 못하고 그냥 위에 붙어 있다가 같이 스크롤돼 사라진다.
+   */
   .aside {
     grid-column: 3;
+    align-self: stretch;
     padding-left: calc(4 * var(--space));
   }
 
